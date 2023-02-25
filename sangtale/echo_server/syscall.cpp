@@ -1,5 +1,10 @@
 #include "echo_server.hpp"
 
+inline void exit_with_error(const std::string &msg) {
+  std::cerr << msg << "\n";
+  exit(EXIT_FAILURE);
+}
+
 /**
  * @brief 소켓 디스크립터(SD)를 반환 and 시스템 콜 에러 핸들링
  * @return socket()의 return value, SD(FD)
@@ -41,7 +46,11 @@ void __listen_handling(int sd) {
   const int count_wait_queue = 5;
   if (listen(sd, count_wait_queue) == -1)
     exit_with_error("listen() error\n" + std::string(strerror(errno)));
-  fcntl(sd, F_SETFL, O_NONBLOCK);
+}
+
+void __fcntl_handling(int sd) {
+  if (fcntl(sd, F_SETFL, O_NONBLOCK) == -1)
+    exit_with_error("fcntl() error\n" + std::string(strerror(errno)));
 }
 
 int __kqueue_handling() {
@@ -49,4 +58,11 @@ int __kqueue_handling() {
   if (kq == -1)
     exit_with_error("kqueue() error\n" + std::string(strerror(errno)));
   return (kq);
+}
+
+int __accept_handling(int sd) {
+  const int client_socket = accept(sd, NULL, NULL);
+  if (client_socket == -1)
+    exit_with_error("accept() error\n" + std::string(strerror(errno)));
+  return (client_socket);
 }

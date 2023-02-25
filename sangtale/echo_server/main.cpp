@@ -27,8 +27,8 @@ static void disconnect_client(int client_fd,
   clients.erase(client_fd);
 }
 
-static void event_control(int server_socket, struct sockaddr_in server_addr) {
-  int kq = __kqueue_handling();
+static void kevent_control(int server_socket) {
+  const int kq = __kqueue_handling();
   std::map<int, std::string> clients;     // map for client socket:data
   std::vector<struct kevent> change_list; // kevent vector for changelist
   struct kevent event_list[8];            // kevent array for eventlist
@@ -45,18 +45,80 @@ static void event_control(int server_socket, struct sockaddr_in server_addr) {
         kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
     if (new_events == -1)
       exit_with_error("kevent() error\n" + std::string(strerror(errno)));
+    change_list.clear(); // clear change_list for new changes
+
+    for (int i = 0; i < new_events; ++i) {
+      curr_event = &event_list[i];
+
+      /* check error event return */
+      if (curr_event->flags & EV_ERROR) {
+        if ((int)curr_event->ident == server_socket)
+          exit_with_error("server socket error");
+        else {
+          std::cerr << "client socket error\n";
+          disconnect_client(curr_event->ident, clients);
+        }
+      } else if (curr_event->filter == EVFILT_READ) {
+        if ((int)curr_event->ident == server_socket) {
+          /* accept new client */
+          int client_socket = __accept_handling(server_socket);
+          std::cout << "accept new client : " << client_socket << "\n";
+          __fcntl_handling(client_socket);
+
+          /* add event for client socket - add read && write event */
+          change_events(change_list, client_socket, EVFILT_READ,
+                        EV_ADD | EV_ENABLE, 0, 0, NULL);
+          change_events(change_list, client_socket, EVFILT_WRITE,
+                        EV_ADD | EV_ENABLE, 0, 0, NULL);
+          clients[client_socket] = "";
+        } else if (clients.find(curr_event->ident) != clients.end()) {
+          /* read data from client */
+          char buf[1024];
+          int n = read(curr_event->ident, buf, sizeof(buf));
+          if (n <= 0) {
+            if (n < 0)
+              std::cerr << "client read error\n";
+            disconnect_client(curr_event->ident, clients);
+          } else {
+            buf[n] = '\0';
+            clients[curr_event->ident] += buf;
+            std::cout << "received data from " << curr_event->ident << ": "
+                      << clients[curr_event->ident] << "\n";
+          }
+        } else if (curr_event->filter == EVFILT_WRITE) {
+          /* send data to client */
+          std::map<int, std::string>::iterator it =
+              clients.find(curr_event->ident);
+          if (it != clients.end()) {
+            if (clients[curr_event->ident] != "") {
+              int n =
+                  write(curr_event->ident, clients[curr_event->ident].c_str(),
+                        clients[curr_event->ident].size());
+              if (n == -1) {
+                std::cerr << "client write() error\n";
+                disconnect_client(curr_event->ident, clients);
+              } else {
+                clients[curr_event->ident].clear();
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 
-int main(int ac, char **av, char **en) {
+int main() {
   int server_socket;
   struct sockaddr_in server_addr;
 
   server_socket = __socket_init();
   __init_server_addr(server_addr);
+
   __bind_handling(server_socket, server_addr);
   __listen_handling(server_socket);
+  __fcntl_handling(server_socket);
 
-  event_control(server_socket, server_addr);
+  kevent_control(server_socket);
   return (EXIT_SUCCESS);
 }
