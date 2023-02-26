@@ -1,23 +1,22 @@
 CC = c++
 LDFLAGS = -lpthread
 
-.PHONY: re clean client echoServer
-
 all: echoServer client
+	@echo "Done."
 
 echoServer: main.o syscall.o
-	$(CC) $^ -o $@
-	@make clean
+	@echo "echoServer Compiling..."
+	@$(CC) $^ -o $@
 
 client: client.cpp
-	$(CC) $< -o $@
-	@make clean
+	@echo "client Compiling..."
+	@$(CC) $< -o $@
 
 main.o: main.cpp
-	$(CC) -c $< -o $@
+	@$(CC) -c $< -o $@
 
 syscall.o: syscall.cpp
-	$(CC) -c $< -o $@
+	@$(CC) -c $< -o $@
 
 clean:
-	rm -f echoServer client *.o
+	@rm -f echoServer client *.o
