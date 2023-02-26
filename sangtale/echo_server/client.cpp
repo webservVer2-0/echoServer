@@ -31,7 +31,8 @@ int main(int ac, char *av[]) {
     error_handling("connect() error.");
   }
 
-  int n;
+  int n = 0;
+
   n = scanf("%[^\n]s", message);
   if (n == -1) {
     error_handling("scanf() error");
@@ -40,6 +41,10 @@ int main(int ac, char *av[]) {
   if (n == -1) {
     error_handling("write() error");
   }
+  char buf[1024];
+  n = read(sock, buf, sizeof(buf));
+  buf[n] = '\0';
+  write(1, buf, n);
   close(sock);
   return (0);
 }
