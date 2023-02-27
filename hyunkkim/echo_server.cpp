@@ -90,8 +90,6 @@ int main() {
         kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
     if (new_events == -1) {
       exit_with_perror("kevent() error: " + std::string(strerror(errno)));
-    } else {
-      std::cout << "새로운 이벤트 등록 성공!" << std::endl;
     }
 
     for (int i = 0; i < new_events; i++) {
@@ -106,8 +104,25 @@ int main() {
           std::cerr << "클라이언트 소켓 에러" << std::endl;
           disconnect_client(curr_event->ident, clients);
         }
+      } else if (curr_event->filter == EVFILT_WRITE) {
+        std::map<int, std::string>::iterator it =
+            clients.find(curr_event->ident);
+        if (it != clients.end()) {
+          if (clients[curr_event->ident] != "") {
+            std::cout << "클라이언트에게 data를 쓰는 중..." << std::endl;
+            int n = write(curr_event->ident, clients[curr_event->ident].c_str(),
+                          clients[curr_event->ident].size());
+            std::cout << "[전송 완료!]" << std::endl;
+
+            if (n == -1) {
+              std::cerr << "클라이언트 write 에러!" << std::endl;
+              disconnect_client(curr_event->ident, clients);
+            } else {
+              clients[curr_event->ident].clear();
+            }
+          }
+        }
       } else if (curr_event->filter == EVFILT_READ) {
-        std::cout << "이벤트 등록 (또는 READ?) 스코프 진입" << std::endl;
         if (curr_event->ident == (uintptr_t)server_socket) {
           int client_socket = accept(server_socket, NULL, NULL);
 
@@ -122,10 +137,10 @@ int main() {
                         EV_ADD | EV_ENABLE, 0, 0, NULL);
           change_events(change_list, client_socket, EVFILT_WRITE,
                         EV_ADD | EV_ENABLE, 0, 0, NULL);
-          clients[client_socket] = "kkrppp";
+          clients[client_socket] = "";
         } else if (clients.find(curr_event->ident) != clients.end()) {
-          std::cout << "클라이언트로 부터 data를 읽는 중" << std::endl;
           char buf[1024];
+          std::cout << "클라이언트로 부터 data를 읽는 중..." << std::endl;
           int n = read(curr_event->ident, buf, sizeof(buf));
 
           if (n <= 0) {
@@ -136,27 +151,9 @@ int main() {
           } else {
             buf[n] = '\0';  // nul문자 종료;
             clients[curr_event->ident] += buf;
-            std::cout << "이 클라이언트 " << curr_event->ident << "로 부터 "
-                      << clients[curr_event->ident] << " 인 data를 받았습니다."
+            std::cout << curr_event->ident
+                      << "로 부터 받은 data: " << clients[curr_event->ident]
                       << std::endl;
-          }
-        } else if (curr_event->filter == EVFILT_WRITE) {
-          std::cout << "클라이언트에게 data를 쓰는 중?" << std::endl;
-          std::map<int, std::string>::iterator it =
-              clients.find(curr_event->ident);
-          if (it != clients.end()) {
-            if (clients[curr_event->ident] != "kkrppp") {
-              int n =
-                  write(curr_event->ident, clients[curr_event->ident].c_str(),
-                        clients[curr_event->ident].size());
-
-              if (n == -1) {
-                std::cerr << "클라이언트 write 에러!" << std::endl;
-                disconnect_client(curr_event->ident, clients);
-              } else {
-                clients[curr_event->ident].clear();
-              }
-            }
           }
         }
       }
