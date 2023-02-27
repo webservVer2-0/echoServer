@@ -11,11 +11,7 @@
 #include <map>
 #include <vector>
 
-#ifdef linux
-printf("linux compiled\n");
-#else
 #include <sys/time.h>
-#endif
 
 void exit_with_error(const std::string &msg);
 

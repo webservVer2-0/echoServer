@@ -1,6 +1,6 @@
 #include "echo_server.hpp"
 
-inline void exit_with_error(const std::string &msg) {
+void exit_with_error(const std::string &msg) {
   std::cerr << msg << "\n";
   exit(EXIT_FAILURE);
 }
