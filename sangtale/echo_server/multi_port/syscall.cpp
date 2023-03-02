@@ -1,7 +1,7 @@
 #include "syscall.hpp"
 
-inline void exit_with_error(const std::string &msg) {
-  std::cerr << msg << "\n";
+void exit_with_error(const std::string &msg) {
+  std::cerr << msg << ": " << errno << "\n";
   exit(EXIT_FAILURE);
 }
 
@@ -11,7 +11,6 @@ inline void exit_with_error(const std::string &msg) {
  */
 int __socket_init() {
   const int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-  setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, NULL, sizeof(int));
   if (server_socket == -1)
     exit_with_error("socket() error\n" + std::string(strerror(errno)));
   return (server_socket);
@@ -21,11 +20,11 @@ int __socket_init() {
  * @brief 서버 어드레스를 초기화
  * @param server_addr
  */
-void __init_server_addr(struct sockaddr_in &server_addr) {
+void __init_server_addr(struct sockaddr_in &server_addr, int port_number) {
   memset(&server_addr, 0, sizeof(server_addr));
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  server_addr.sin_port = htons(8080);
+  server_addr.sin_port = htons(port_number);
 }
 
 /**
@@ -33,7 +32,7 @@ void __init_server_addr(struct sockaddr_in &server_addr) {
  * @param sd, server_addr
  */
 void __bind_handling(int server_socket, struct sockaddr_in &server_addr) {
-  if (bind(server_socket, (struct sockaddr *)&server_addr,
+  if (bind(server_socket, reinterpret_cast<struct sockaddr *>(&server_addr),
            sizeof(server_addr)) == -1)
     exit_with_error("bind() error\n" + std::string(strerror(errno)));
 }
@@ -49,6 +48,10 @@ void __listen_handling(int sd) {
     exit_with_error("listen() error\n" + std::string(strerror(errno)));
 }
 
+/**
+ * @brief 소켓을 논블록(비동기)
+ * @param sd
+ */
 void __fcntl_handling(int sd) {
   if (fcntl(sd, F_SETFL, O_NONBLOCK) == -1)
     exit_with_error("fcntl() error\n" + std::string(strerror(errno)));
@@ -66,4 +69,15 @@ int __accept_handling(int sd) {
   if (client_socket == -1)
     exit_with_error("accept() error\n" + std::string(strerror(errno)));
   return (client_socket);
+}
+
+int __setsockopt_handling(int sd, int option, const void *optval) {
+  if (option == SO_REUSEADDR) {
+    if (setsockopt(sd, SOL_SOCKET, option, optval, sizeof(optval)) == -1)
+      exit_with_error("setsockopt(SO_REUSERADDR) error");
+  } else if (setsockopt(sd, SOL_SOCKET, option, optval, sizeof(optval)) == -1) {
+    std::cerr << "setsockopt() error\n";
+    return (1);
+  }
+  return (0);
 }

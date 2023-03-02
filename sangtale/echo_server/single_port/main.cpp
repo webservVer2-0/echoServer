@@ -74,7 +74,6 @@ static void kevent_control(int server_socket) {
           clients[client_socket] = "";
         } else if (clients.find(curr_event->ident) != clients.end()) {
           /* read data from client */
-          printf("read event 2 : %d\n", new_events);
           char buf[1024];
           int n = read(curr_event->ident, buf, sizeof(buf));
           if (n <= 0) {
