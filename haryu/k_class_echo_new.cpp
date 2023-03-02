@@ -180,38 +180,38 @@ void Server::turnOn() {
           clients_[clientS_ocket] = "";
         } else if (clients_.find(currEvent_->ident) != clients_.end()) {
           /* read data from clients_ */
-          char buf[1024];
-          int n = recv(currEvent_->ident, buf, sizeof(buf), 0);
+          char* buf = new char[currEvent_->data];
+          int n = recv(currEvent_->ident, buf, currEvent_->data, 0);
           if (n == 0) {
             // disconnectClients(currEvent_->ident, clients_);
             clients_[currEvent_->ident].clear();
           } else {
-            buf[n] = '\0';
-            clients_[currEvent_->ident].append(buf);
-            COUT << "received data from " << currEvent_->ident << ":\n"
-                 << clients_[currEvent_->ident] << CEND;
-            size_t firstLine_ = clients_[currEvent_->ident].find('\n');
-            String firstLineString_ =
-                clients_[currEvent_->ident].substr(0, firstLine_);
-            size_t srcStart = firstLineString_.find(' ');
-            size_t srcEnd = firstLineString_.find(' ', srcStart + 1);
-            String srcLine = firstLineString_.substr(srcStart + 1, srcEnd - 4);
+            // buf[n] = '\0';
+            // clients_[currEvent_->ident].append(buf);
+            // COUT << "received data from " << currEvent_->ident << ":\n"
+            //      << clients_[currEvent_->ident] << CEND;
+            // size_t firstLine_ = clients_[currEvent_->ident].find('\n');
+            // String firstLineString_ =
+            //     clients_[currEvent_->ident].substr(0, firstLine_);
+            // size_t srcStart = firstLineString_.find(' ');
+            // size_t srcEnd = firstLineString_.find(' ', srcStart + 1);
+            // String srcLine = firstLineString_.substr(srcStart + 1, srcEnd -
+            // 4);
             /* send Data to client*/
             // if (srcLine == "/") {
-            std::map<int, String>::iterator it =
-                clients_.find(currEvent_->ident);
-            if (it != clients_.end()) {
-              int n;
-              n = send(currEvent_->ident, msg_.c_str(), strlen(msg_.c_str()),
-                       MSG_DONTWAIT);
-              if (n == -1) {
-                disconnectClients(currEvent_->ident, clients_);
-                exitWithPerror("client write error");
-              } else if (n == 0)
-                disconnectClients(currEvent_->ident, clients_);
-            } else
-              clients_[currEvent_->ident].clear();
+            // std::map<int, String>::iterator it =
+            //     clients_.find(currEvent_->ident);
+            // if (it != clients_.end()) {
+            //   int n;
+            n = send(currEvent_->ident, buf, currEvent_->data, 0);
+            if (n == -1) {
+              disconnectClients(currEvent_->ident, clients_);
+              exitWithPerror("client write error");
+            } else if (n == 0)
+              disconnectClients(currEvent_->ident, clients_);
           }
+          //   else clients_[currEvent_->ident].clear();
+          // }
         }
       }
     }
