@@ -30,17 +30,15 @@ public:
 		_server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 		_server_addr.sin_port = htons(port);
 		std::cout<< "port: " << ntohs(_server_addr.sin_port) << std::endl;
-		std::cout<< "addr: " << _server_addr.sin_addr.s_addr << std::endl;
 		if (bind(_server_socket, (struct sockaddr*)&_server_addr, sizeof(_server_addr)) == -1)
 			exit(1);
 		if (listen(_server_socket, 10) == -1)
 			exit(2);
 		fcntl(_server_socket, F_SETFL, O_NONBLOCK);
-		msg.insert(_msg.find(']'), "hi123");
+		msg.insert(_msg.find(']'), "test");
 	}
 	~Myserver()
 	{
-		// close(_server_socket);
 	}
 };
 
@@ -71,8 +69,8 @@ int main(int ac, char** av)
 
 	std::getline(httpmsg, msg1, '\0');
 	std::getline(entity, msg2, '\0');
-	msg1 += (char)13;
 	msg1 += "\n";
+	msg1 += (char)13;
 	msg1 += "\n";
 	msg1 += msg2;
 
@@ -90,13 +88,14 @@ int main(int ac, char** av)
 	{
 		change_events(change_list, (*it).second._server_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	}
-	std::cout << "multi server started" << std::endl;
+	std::cout << "multi server start" << std::endl;
 
 	int new_events;
 	struct kevent* curr_event;
 	while(1)
 	{
 		new_events = kevent(kq, &change_list[0], change_list.size(), event_list, 8, NULL);
+		std::cout << "new_events: " << new_events << std::endl;
 		if (new_events == -1)
 			exit(4);
 
@@ -110,9 +109,7 @@ int main(int ac, char** av)
 				if (it != server_list.end())
 					exit(5);
 				else
-				{
 					disconnect_client(curr_event->ident, clients);
-				}
 			}
 			else if (curr_event->filter == EVFILT_READ)
 			{
@@ -133,7 +130,6 @@ int main(int ac, char** av)
 					fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
 					change_events(change_list, client_socket, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
-					change_events(change_list, client_socket, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
 					clients[client_socket] = "";
 				}
 				else if (clients.find(curr_event->ident) != clients.end())
@@ -170,14 +166,10 @@ int main(int ac, char** av)
 						else
 						{
 							std::cout << "success!" << std::endl;
-							clients[curr_event->ident].clear();
+							change_events(change_list, curr_event->ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+							disconnect_client(curr_event->ident, clients);
 						}
 					}
-					// else
-					// {
-					// 	std::cout << curr_event->ident << std::endl;
-					// 	std::cout << clients[curr_event->ident] << std::endl;
-					// }
 				}
 			}
 		}
