@@ -1,5 +1,6 @@
 {
 	"files.associations": {
+<<<<<<< HEAD
 		"iosfwd": "cpp",
 		"map": "cpp",
 		"vector": "cpp",
@@ -68,5 +69,9 @@
 		"fstream": "cpp",
 		"iomanip": "cpp",
 		"stack": "cpp"
+=======
+		"vector": "cpp",
+		"string": "cpp"
+>>>>>>> 618d5c6f8d689c651333a1e6b11811c5995dc4c8
 	}
 }

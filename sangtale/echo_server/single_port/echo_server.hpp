@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <sys/event.h>
 #include <sys/socket.h>
-#include <sys/time.h>
 #include <sys/types.h>
 
 #include <unistd.h>
@@ -12,6 +11,8 @@
 #include <iostream>
 #include <map>
 #include <vector>
+
+#include <sys/time.h>
 
 void exit_with_error(const std::string &msg);
 

@@ -1,6 +1,6 @@
 #include "echo_server.hpp"
 
-inline void exit_with_error(const std::string &msg) {
+void exit_with_error(const std::string &msg) {
   std::cerr << msg << "\n";
   exit(EXIT_FAILURE);
 }
@@ -65,5 +65,6 @@ int __accept_handling(int sd) {
   const int client_socket = accept(sd, NULL, NULL);
   if (client_socket == -1)
     exit_with_error("accept() error\n" + std::string(strerror(errno)));
+  std::cout << "accept new client : " << client_socket << "\n";
   return (client_socket);
 }
