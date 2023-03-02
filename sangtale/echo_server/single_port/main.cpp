@@ -61,6 +61,7 @@ static void kevent_control(int server_socket) {
       } else if (curr_event->filter == EVFILT_READ) {
         if ((int)curr_event->ident == server_socket) {
           /* accept new client */
+          printf("read event 1 : %d\n", new_events);
           int client_socket = __accept_handling(server_socket);
           std::cout << "accept new client : " << client_socket << "\n";
           __fcntl_handling(client_socket);
@@ -73,6 +74,7 @@ static void kevent_control(int server_socket) {
           clients[client_socket] = "";
         } else if (clients.find(curr_event->ident) != clients.end()) {
           /* read data from client */
+          printf("read event 2 : %d\n", new_events);
           char buf[1024];
           int n = read(curr_event->ident, buf, sizeof(buf));
           if (n <= 0) {
@@ -87,6 +89,7 @@ static void kevent_control(int server_socket) {
           }
         } else if (curr_event->filter == EVFILT_WRITE) {
           /* send data to client */
+          printf("write event : %d\n", new_events);
           std::map<int, std::string>::iterator it =
               clients.find(curr_event->ident);
           if (it != clients.end()) {

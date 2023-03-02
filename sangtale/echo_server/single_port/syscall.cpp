@@ -11,6 +11,7 @@ inline void exit_with_error(const std::string &msg) {
  */
 int __socket_init() {
   const int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+  setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, NULL, sizeof(int));
   if (server_socket == -1)
     exit_with_error("socket() error\n" + std::string(strerror(errno)));
   return (server_socket);

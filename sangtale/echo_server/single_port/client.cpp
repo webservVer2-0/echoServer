@@ -17,13 +17,13 @@ int main(int ac, char *av[]) {
     exit(EXIT_FAILURE);
   }
 
-  sock = socket(PF_INET, SOCK_STREAM, 0);
+  sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock == -1) {
     error_handling("socket() error");
   }
 
   memset(&serv_addr, 0, sizeof(serv_addr));
-  serv_addr.sin_family = PF_INET;
+  serv_addr.sin_family = AF_INET;
   serv_addr.sin_addr.s_addr = inet_addr(av[1]);
   serv_addr.sin_port = htons(atoi(av[2]));
 
