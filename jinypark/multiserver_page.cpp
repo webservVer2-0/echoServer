@@ -73,6 +73,7 @@ int main(int ac, char** av)
 	std::getline(entity, msg2, '\0');
 	msg1 += (char)13;
 	msg1 += "\n";
+	msg1 += "\n";
 	msg1 += msg2;
 
 	int kq = kqueue();
@@ -120,7 +121,6 @@ int main(int ac, char** av)
 				{
 						if (curr_event->ident == (*it).second._server_socket)
 						{
-							std::cout << "find " << curr_event->ident <<std::endl;
 							break;
 						}
 				}
@@ -129,7 +129,6 @@ int main(int ac, char** av)
 					int client_socket;
 					if ((client_socket = accept((*it).second._server_socket, NULL, NULL)) == -1)
 						exit(6);
-					(*it).second._client_socket = client_socket;
 					std::cout << "accept new client " << client_socket << std::endl;
 					fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
@@ -141,47 +140,44 @@ int main(int ac, char** av)
 				{
 					char buf[1024];
 					int n = read(curr_event->ident, buf, sizeof(buf));
-
 					if (n <= 0)
 					{
 						if (n < 0)
 							std::cerr << "client read error!" << std::endl;
-						disconnect_client(curr_event->ident, clients);
+						std::cout << "read done\n";
+						clients[curr_event->ident].clear();
+						// disconnect_client(curr_event->ident, clients);
 					}
 					else
 					{
 						buf[n] = '\0';
 						clients[curr_event->ident] += buf;
 						std::cout << "received data from " << curr_event->ident << ": " << clients[curr_event->ident] << std::endl;
+						std::cout << curr_event->ident << std::endl;
 					}
 				}
-			}
-			else if (curr_event->filter == EVFILT_WRITE)
-			{
-				std::map<int, std::string>::iterator it = clients.find(curr_event->ident);
-				if (it != clients.end())
+				std::map<int, std::string>::iterator itt = clients.find(curr_event->ident);
+				if (itt != clients.end())
 				{
 					if (clients[curr_event->ident] != "")
 					{
 						int n;
-						std::map<int, Myserver>::iterator it2 = server_list.begin();
-
-						for (; it2 != server_list.end(); ++it2)
-						{
-							if ((*it2).second._client_socket == curr_event->ident)
-								break;
-						}
-						std::string msg3 = (*it2).second._msg;
-						if ((n = write(curr_event->ident, msg3.c_str(), msg3.size()) == -1))
+						if ((n = write(curr_event->ident, msg1.c_str(), msg1.size()) == -1))
 						{
 							std::cerr << "client write error!" << std::endl;
 							disconnect_client(curr_event->ident, clients);
 						}
 						else
 						{
+							std::cout << "success!" << std::endl;
 							clients[curr_event->ident].clear();
 						}
 					}
+					// else
+					// {
+					// 	std::cout << curr_event->ident << std::endl;
+					// 	std::cout << clients[curr_event->ident] << std::endl;
+					// }
 				}
 			}
 		}

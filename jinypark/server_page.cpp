@@ -39,6 +39,8 @@ int main(int ac, char** av)
 	std::getline(entity, msg2, '\0');
 	msg1 += (char)13;
 	msg1 += "\n";
+	msg1 += (char)13;
+	msg1 += "\n";
 	msg1 += msg2;
 
 	int server_socket;
@@ -94,6 +96,7 @@ int main(int ac, char** av)
 					exit(5);
 				else
 				{
+					std::cout << "here!\n";
 					disconnect_client(curr_event->ident, clients);
 				}
 			}
