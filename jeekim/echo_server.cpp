@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   if (bind(s_sock, (struct sockaddr*)&sv_addr, sizeof(sv_addr)) == -1)
     error_handle("bind() error");
 
-  if (listen(s_sock, 5) == -1) error_handle("listen() error");
+  if (listen(s_sock, 4) == -1) error_handle("listen() error");
 
   fcntl(s_sock, F_SETFL, O_NONBLOCK);
 
@@ -110,6 +110,7 @@ int main(int argc, char** argv) {
             error_handle("accept() error");
 
           std::cout << "accept new client : " << c_sock << std::endl;
+          // accept된 소켓의 디스크립터
           fcntl(c_sock, F_SETFL, O_NONBLOCK);
 
           // add event for client socket
@@ -139,8 +140,10 @@ int main(int argc, char** argv) {
         if (it != clients.end()) {
           if (clients[cur_ev->ident] != "") {
             int str_len;
-            if ((str_len = write(cur_ev->ident, clients[cur_ev->ident].c_str(),
-                                 clients[cur_ev->ident].size())) == -1)
+            // if ((str_len = write(cur_ev->ident, clients[cur_ev->ident].c_str(),
+            //                      clients[cur_ev->ident].size())) == -1)
+            if ((str_len = write(cur_ev->ident, "HTTP/1.1 200 OK\r\nContent-Length:2\r\n\r\nhi",
+                                 strlen("HTTP/1.1 200 OK\r\nContent-Length:2\r\n\r\nhi"))) == -1)
               error_handle("client write() error");
             disconnect_client(cur_ev->ident, clients);
           } else
